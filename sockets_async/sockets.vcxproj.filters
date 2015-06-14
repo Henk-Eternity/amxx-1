@@ -1,0 +1,31 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="sdk">
+      <UniqueIdentifier>{f7391d6b-5c95-40cd-a855-c48149ddd592}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="sdk\amxxmodule.cpp">
+      <Filter>sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="sockets.cpp" />
+    <ClCompile Include="module.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="sdk\amxxmodule.h">
+      <Filter>sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="sdk\CVector.h">
+      <Filter>sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="sdk\moduleconfig.h">
+      <Filter>sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="sdk\sh_stack.h">
+      <Filter>sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="sockets.h" />
+    <ClInclude Include="errors.h" />
+  </ItemGroup>
+</Project>
