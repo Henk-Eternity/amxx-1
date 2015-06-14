@@ -40,12 +40,12 @@ int SocketSelect(SOCKET sock, bool &readable, bool &writable, bool &error);
 static cell AMX_NATIVE_CALL socket_create(AMX *amx, cell *params)
 {
 	SOCKET sock=SOCKET_ERROR;
-	bool TCP =  (params[1] != SOCK_TYPE_UDP);
+	bool TCP = (params[1] != SOCK_TYPE_UDP);
 
 	sock = socket(AF_INET, TCP?SOCK_STREAM:SOCK_DGRAM, 0);
 	if(sock < 0)
 		return 0;
-    
+
 	if(TCP)
 	{
 		#ifdef WIN32
@@ -72,7 +72,7 @@ static cell AMX_NATIVE_CALL socket_create(AMX *amx, cell *params)
 		#endif
 	}
 
-    return NewSocket(sock, 0, TCP, params[2]);
+	return NewSocket(sock, 0, TCP, params[2]);
 }
 
 // native socket_close(SOCKET:socket);
@@ -218,7 +218,7 @@ static cell AMX_NATIVE_CALL socket_send(AMX *amx, cell *params)
 		sendsize = params[3];
 	}
 
-    return send(s->sock, g_Buff, sendsize, 0);
+	return send(s->sock, g_Buff, sendsize, 0);
 }
 
 // native socket_recv(SOCKET:socket, data[], maxlen)
@@ -234,25 +234,25 @@ static cell AMX_NATIVE_CALL socket_recv(AMX *amx, cell *params)
 	}
 
 	int maxlen = params[3];
-    int received = -1;
+	int received = -1;
 
-    memset(g_Buff, 0, maxlen);
-    received = recv(s->sock, g_Buff, maxlen, 0);
+	memset(g_Buff, 0, maxlen);
+	received = recv(s->sock, g_Buff, maxlen, 0);
 	if(received == -1)
 		return -1;
 
 	g_Buff[received] = 0;
-    int nlen = received;
-    int max = maxlen;
+	int nlen = received;
+	int max = maxlen;
 
-    const char* src = g_Buff;
-    cell* dest = MF_GetAmxAddr(amx, params[2]);
+	const char* src = g_Buff;
+	cell* dest = MF_GetAmxAddr(amx, params[2]);
 
-    while(max-- && nlen--)
+	while(max-- && nlen--)
 		*dest++ = (cell)*src++;
-    *dest = 0;
+	*dest = 0;
 
-    return received;
+	return received;
 }
 
 // native socket_sendto(SOCKET:socket, const ip[], port, const data[], sendsize=0)
@@ -278,7 +278,7 @@ static cell AMX_NATIVE_CALL socket_sendto(AMX *amx, cell *params)
 		return -1;
 
 	remote.sin_family = AF_INET;
-    remote.sin_port = htons(port);
+	remote.sin_port = htons(port);
 	remote.sin_addr.s_addr = addr;
 
 	int sendsize = params[5];
@@ -297,7 +297,7 @@ static cell AMX_NATIVE_CALL socket_sendto(AMX *amx, cell *params)
 		sendsize = params[5];
 	}
 
-    return sendto(s->sock, g_Buff, sendsize, 0, (struct sockaddr *)&remote, sizeof(remote));
+	return sendto(s->sock, g_Buff, sendsize, 0, (struct sockaddr *)&remote, sizeof(remote));
 }
 
 // socket_recvfrom(SOCKET:socket, data[], maxlen, ip[], len, &port)
@@ -327,17 +327,17 @@ static cell AMX_NATIVE_CALL socket_recvfrom(AMX *amx, cell *params)
 	int nlen = received;
 	int max = maxlen;
 
-    const char* src = g_Buff;
-    cell* dest = MF_GetAmxAddr(amx, params[2]);
+	const char* src = g_Buff;
+	cell* dest = MF_GetAmxAddr(amx, params[2]);
 
-    while(max-- && nlen--)
+	while(max-- && nlen--)
 		*dest++ = (cell)*src++;
-    *dest = 0;
+	*dest = 0;
 
 	MF_SetAmxString(amx, params[4], inet_ntoa(cliaddr.sin_addr), params[5]);
 	params[6] = (cell)ntohs(cliaddr.sin_port);
 
-    return received;
+	return received;
 }
 
 AMX_NATIVE_INFO sockets_natives[] = {
@@ -454,17 +454,17 @@ int SocketSelect(SOCKET sock, bool &readable, bool &writable, bool &error)
 	fd_set readfds, writefds, exceptfds;
 	int rtn;
 
-    FD_ZERO(&readfds);
+	FD_ZERO(&readfds);
 	FD_ZERO(&writefds);
 	FD_ZERO(&exceptfds);
 
-    FD_SET(sock, &readfds);
+	FD_SET(sock, &readfds);
 	FD_SET(sock, &writefds);
 	FD_SET(sock, &exceptfds);
 
 	struct timeval tv;
-    tv.tv_sec=0;
-    tv.tv_usec=0;
+	tv.tv_sec=0;
+	tv.tv_usec=0;
 
 	rtn = select(sock+1, &readfds, &writefds, &exceptfds, &tv);
 
@@ -472,7 +472,7 @@ int SocketSelect(SOCKET sock, bool &readable, bool &writable, bool &error)
 	writable = FD_ISSET(sock, &writefds) != 0;
 	error	 = FD_ISSET(sock, &exceptfds) != 0;
 
-    return rtn;
+	return rtn;
 }
 
 void StartFrame()

@@ -12,7 +12,7 @@ extern int fwsockReadable;
 
 void OnAmxxAttach()
 {
-	#ifdef _WIN32  
+	#ifdef _WIN32
 		short wVersionRequested;
 		WSADATA wsaData;
 		wVersionRequested = MAKEWORD (2, 0);
