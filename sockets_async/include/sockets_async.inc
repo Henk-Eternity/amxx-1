@@ -2,8 +2,8 @@
 	#endinput
 #endif
 #define _sockets_async_included
- /*==================|
-| Sockets Async 1.1b |
+ /*=================|
+| Sockets Async 1.2 |
 |==================*/
 #pragma reqlib sockets_async
 #pragma loadlib sockets_async
