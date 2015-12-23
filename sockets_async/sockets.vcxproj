@@ -16,7 +16,6 @@
     <ClCompile Include="sockets.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="errors.h" />
     <ClInclude Include="sdk\amxxmodule.h" />
     <ClInclude Include="sdk\CVector.h" />
     <ClInclude Include="sdk\moduleconfig.h" />

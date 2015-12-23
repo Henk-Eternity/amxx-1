@@ -6,7 +6,7 @@ MM_ROOT = ../../../metamod-1.19/metamod
 
 ### EDIT BELOW FOR OTHER PROJECTS ###
 
-OPT_FLAGS = -O2 -funroll-loops -s -pipe -fomit-frame-pointer -fno-strict-aliasing
+OPT_FLAGS = -O2 -funroll-loops -s -pipe -fomit-frame-pointer -fno-strict-aliasing -Wall -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0
 DEBUG_FLAGS = -g -ggdb3
 CPP = gcc
 NAME = sockets

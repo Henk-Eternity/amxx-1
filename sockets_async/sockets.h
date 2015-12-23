@@ -8,8 +8,11 @@
 
 	#include <winsock.h>
 
-	#define SOCK_LAST_ERROR WSAGetLastError()
 	#define socklen_t int
+
+	#define SOCK_LAST_ERROR	WSAGetLastError()
+	#define SOCK_WOULDBLOCK	WSAEWOULDBLOCK
+	#define SOCK_INPROGRESS	WSAEINPROGRESS
 
 #else //linux
 
@@ -30,14 +33,13 @@
 	#define SOCKET_ERROR -1
 	#endif
 
-	#define SOCK_SEND_SIGNAL_FLAGS MSG_NOSIGNAL
 
-	#define SOCK_LAST_ERROR errno
+	#define SOCK_LAST_ERROR	errno
+	#define SOCK_WOULDBLOCK	EAGAIN
+	#define SOCK_INPROGRESS	EINPROGRESS
+
 
 #endif
-
-#include "errors.h"
-
 
 // Module
 #include "sdk/amxxmodule.h"

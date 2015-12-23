@@ -16,6 +16,7 @@ struct SocketAMXX
 	SOCKET sock;
 	SOCKET parent;
 	bool tcp;
+	bool checkW;
 };
 
 CVector<SocketAMXX *> g_SockAMXX;
@@ -25,7 +26,7 @@ char g_Buff[4096];
 int g_CountSockets=0;
 float g_NextCheck=0.0;
 
-int fwsockConnected, fwsockClosed, fwsockAccepted, fwsockReadable;
+int fwsockConnected, fwsockClosed, fwsockAccepted, fwsockReadable, fwsockWritable;
 
 SocketAMXX *get_socket_byid(int id);
 void DestroySockets();
@@ -33,7 +34,6 @@ void DestroyChildren(SOCKET sock);
 int NewSocket(SOCKET sock, SOCKET parem, bool tcp, int customID);
 bool FreeSocket(SocketAMXX *s);
 int SocketSelect(SOCKET sock, bool &readable, bool &writable, bool &error);
-
 
 /*=== New Natives ===================================================================*/
 // native SOCKET:socket_create(type, customID);
@@ -75,12 +75,38 @@ static cell AMX_NATIVE_CALL socket_create(AMX *amx, cell *params)
 	return NewSocket(sock, 0, TCP, params[2]);
 }
 
+// native socket_lasterror();
+static cell AMX_NATIVE_CALL socket_lasterror(AMX *amx, cell *params)
+{
+	return SOCK_LAST_ERROR;
+}
+
+// native socket_getip(const hostname[], ip[], len);
+static cell AMX_NATIVE_CALL socket_getip(AMX *amx, cell *params)
+{
+	int len; char *hostname;
+	hostname = MF_GetAmxString(amx, params[1], 0, &len);
+
+	if(!len) return 0;
+
+	struct hostent *host_info;
+	host_info = gethostbyname(hostname);
+	if(host_info == NULL)
+		return 0;
+
+	struct in_addr addr;
+	addr.s_addr = *(u_long *)host_info->h_addr;
+
+	MF_SetAmxString(amx, params[2], inet_ntoa(addr), params[3]);
+	return 1;
+}
+
 // native socket_close(SOCKET:socket);
 static cell AMX_NATIVE_CALL socket_close(AMX *amx, cell *params)
 {
 	SocketAMXX *s;
 	VALID_SOCKET(params[1]);
-	
+
 	FreeSocket(s);
 	return 1;
 }
@@ -172,21 +198,17 @@ static cell AMX_NATIVE_CALL socket_connect(AMX *amx, cell *params)
 		if(host_info == NULL)
 			return -1;
 
-		memcpy((char *)&remote.sin_addr, host_info->h_addr, host_info->h_length);
+		remote.sin_addr.s_addr = *(u_long *)host_info->h_addr;
 	}
 
 	remote.sin_family = AF_INET;
 	remote.sin_port = htons(params[3]);
 
 	len = connect(s->sock, (struct sockaddr*)&remote, sizeof(remote));
-	if(len != 0 && SOCK_LAST_ERROR != SOCK_WOULDBLOCK)
-	{
-		MF_LogError(amx, AMX_ERR_NATIVE, "error al crear la conexion: (%d)", SOCK_LAST_ERROR);
+	if(len != 0 && SOCK_LAST_ERROR != SOCK_WOULDBLOCK && SOCK_LAST_ERROR != SOCK_INPROGRESS)
 		return 0;
-	}
 
 	s->state = STATE_CONNECTING;
-
 	return 1;
 }
 
@@ -218,7 +240,14 @@ static cell AMX_NATIVE_CALL socket_send(AMX *amx, cell *params)
 		sendsize = params[3];
 	}
 
-	return send(s->sock, g_Buff, sendsize, 0);
+	int rtn = send(s->sock, g_Buff, sendsize, 0);
+	if(rtn == -1 && SOCK_LAST_ERROR == SOCK_WOULDBLOCK)
+	{
+		s->checkW = true;
+		return 0;
+	}
+
+	return rtn;
 }
 
 // native socket_recv(SOCKET:socket, data[], maxlen)
@@ -241,7 +270,7 @@ static cell AMX_NATIVE_CALL socket_recv(AMX *amx, cell *params)
 	if(received == -1)
 		return -1;
 
-	g_Buff[received] = 0;
+	g_Buff[received] = '\0';
 	int nlen = received;
 	int max = maxlen;
 
@@ -297,7 +326,14 @@ static cell AMX_NATIVE_CALL socket_sendto(AMX *amx, cell *params)
 		sendsize = params[5];
 	}
 
-	return sendto(s->sock, g_Buff, sendsize, 0, (struct sockaddr *)&remote, sizeof(remote));
+	int rtn = sendto(s->sock, g_Buff, sendsize, 0, (struct sockaddr *)&remote, sizeof(remote));
+	if(rtn == -1 && SOCK_LAST_ERROR == SOCK_WOULDBLOCK)
+	{
+		s->checkW = true;
+		return 0;
+	}
+
+	return rtn;
 }
 
 // socket_recvfrom(SOCKET:socket, data[], maxlen, ip[], len, &port)
@@ -341,16 +377,18 @@ static cell AMX_NATIVE_CALL socket_recvfrom(AMX *amx, cell *params)
 }
 
 AMX_NATIVE_INFO sockets_natives[] = {
-	{"socket_create", socket_create},
-	{"socket_close", socket_close},
-	{"socket_bind", socket_bind},
-	{"socket_get_custom", socket_get_custom},
-	{"socket_set_custom", socket_set_custom},
-	{"socket_connect", socket_connect},
-	{"socket_send", socket_send},
-	{"socket_recv", socket_recv},
-	{"socket_sendto", socket_sendto},
-	{"socket_recvfrom", socket_recvfrom},
+	{"socket_create",		socket_create},
+	{"socket_close",		socket_close},
+	{"socket_lasterror",	socket_lasterror},
+	{"socket_getip",		socket_getip},
+	{"socket_bind",			socket_bind},
+	{"socket_get_custom",	socket_get_custom},
+	{"socket_set_custom",	socket_set_custom},
+	{"socket_connect",		socket_connect},
+	{"socket_send",			socket_send},
+	{"socket_recv",			socket_recv},
+	{"socket_sendto",		socket_sendto},
+	{"socket_recvfrom",		socket_recvfrom},
 	{NULL, NULL}
 };
 
@@ -400,6 +438,7 @@ int NewSocket(SOCKET sock, SOCKET parem, bool tcp, int customID)
 	s->parent	= parem;
 	s->tcp		= tcp;
 	s->customID	= customID;
+	s->checkW	= false;
 
 	g_CountSockets++;
 
@@ -431,7 +470,7 @@ bool FreeSocket(SocketAMXX *s)
 
 		char error; socklen_t len=sizeof error;
 		if(getsockopt(s->sock, SOL_SOCKET, SO_ERROR, &error, &len) != 0)
-			error = -111;
+			error = 0;
 
 		closesocket(s->sock);
 		g_CountSockets--;
@@ -482,18 +521,28 @@ void StartFrame()
 		SocketAMXX *s; SOCKET cl_sock;
 		bool readable, writable, error;
 
-		g_NextCheck = gpGlobals->time + 0.03;
+		g_NextCheck = gpGlobals->time + 0.05;
 		
 		for(size_t slot = 0; slot < g_SockAMXX.size(); slot++)
 		{
 			s = g_SockAMXX[slot];
-			if(!s) continue;
+			if(!s || !s->sock) continue;
 
 			SocketSelect(s->sock, readable, writable, error);
+
+			char errono; socklen_t len=sizeof error;
+			if(getsockopt(s->sock, SOL_SOCKET, SO_ERROR, &errono, &len) != 0)
+				errono = 0;
 
 			if(error)
 			{
 				FreeSocket(s);
+				continue;
+			}
+
+			if(errono)
+			{
+				errono=0;
 				continue;
 			}
 
@@ -534,17 +583,29 @@ void StartFrame()
 						}
 					}
 				}
-				else if(readable)
+				else
 				{
-					MF_ExecuteForward(fwsockReadable, s->id+1, s->customID, s->parent?SOCK_TYPE_CHILD:SOCK_TYPE_TCP);
+					if(readable)
+						MF_ExecuteForward(fwsockReadable, s->id+1, s->customID, s->parent?SOCK_TYPE_CHILD:SOCK_TYPE_TCP);
+
+					if(g_SockAMXX[slot]/*Prevent socket close on fwsockReadable*/ && writable && s->checkW)
+					{
+						s->checkW = false;
+						MF_ExecuteForward(fwsockWritable, s->id+1, s->customID, s->parent?SOCK_TYPE_CHILD:SOCK_TYPE_TCP);
+					}
 				}
 			}
 			else
 			{
 				if(readable)
-				{
 					MF_ExecuteForward(fwsockReadable, s->id+1, s->customID, SOCK_TYPE_UDP);
+
+				if(g_SockAMXX[slot]/*Prevent socket close on fwsockReadable*/ && writable && s->checkW)
+				{
+					s->checkW = false;
+					MF_ExecuteForward(fwsockWritable, s->id+1, s->customID, SOCK_TYPE_UDP);
 				}
+
 			}
 		}
 	}

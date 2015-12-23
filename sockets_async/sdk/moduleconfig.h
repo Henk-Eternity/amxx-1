@@ -5,7 +5,7 @@
 
 // Module info
 #define MODULE_NAME "Sockets Asynchronous"
-#define MODULE_VERSION "1.0"
+#define MODULE_VERSION "1.2"
 #define MODULE_AUTHOR "Destro"
 #define MODULE_URL "https://www.amxmodx-es.com"
 #define MODULE_LOGTAG "SOCKET"

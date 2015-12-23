@@ -2,8 +2,12 @@
 	#endinput
 #endif
 #define _sockets_async_included
-
+ /*==================|
+| Sockets Async 1.1b |
+|==================*/
 #pragma reqlib sockets_async
+#pragma loadlib sockets_async
+
 
 enum SOCKET: {}
 
@@ -16,6 +20,9 @@ enum {
 
 
 native SOCKET:socket_create(type, customID)
+
+native socket_lasterror()
+native socket_getip(const hostname[], ip[], len)
 
 native socket_close(SOCKET:socket)
 native socket_bind(SOCKET:socket, const local_ip[]="", local_port)
@@ -36,6 +43,7 @@ forward fw_sockConnected(SOCKET:socket, customID)
 forward fw_sockClosed(SOCKET:socket, customID, error)
 forward fw_sockAccepted(SOCKET:socket, customID, SOCKET:cl_sock, const cl_ip[], cl_port)
 forward fw_sockReadable(SOCKET:socket, customID, type)
+forward fw_sockWritable(SOCKET:socket, customID, type)
 /* AMXX-Studio Notes - DO NOT MODIFY BELOW HERE
 *{\\ rtf1\\ ansi\\ deff0{\\ fonttbl{\\ f0\\ fnil Tahoma;}}\n\\ viewkind4\\ uc1\\ pard\\ lang11274\\ f0\\ fs16 \n\\ par }
 */

@@ -26,6 +26,5 @@
       <Filter>sdk</Filter>
     </ClInclude>
     <ClInclude Include="sockets.h" />
-    <ClInclude Include="errors.h" />
   </ItemGroup>
 </Project>
